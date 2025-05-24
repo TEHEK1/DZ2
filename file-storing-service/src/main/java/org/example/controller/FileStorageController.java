@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.example.dto.FileUploadResponseDTO;
+import org.example.dto.FileUploadInternalDTO;
 import org.example.service.FileStorageService;
 import org.example.dto.FileResource;
 
@@ -36,7 +37,10 @@ public class FileStorageController {
 
     @Operation(summary = "Upload a text file", description = "Uploads a new text file and returns its ID")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "File uploaded successfully",
+        @ApiResponse(responseCode = "201", description = "New file uploaded successfully",
+                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                        schema = @Schema(implementation = FileUploadResponseDTO.class))),
+        @ApiResponse(responseCode = "200", description = "File already exists",
                      content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                         schema = @Schema(implementation = FileUploadResponseDTO.class))),
         @ApiResponse(responseCode = "400", description = "Invalid file format or empty file"),
@@ -51,8 +55,14 @@ public class FileStorageController {
         }
 
         try {
-            FileUploadResponseDTO uploadResponseDTO = fileStorageService.storeFile(file);
-            return ResponseEntity.status(HttpStatus.CREATED).body(uploadResponseDTO);
+            FileUploadInternalDTO internalResponse = fileStorageService.storeFile(file);
+            FileUploadResponseDTO response = internalResponse;
+            
+            if (internalResponse.isNewFile()) {
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            } else {
+                return ResponseEntity.ok(response);
+            }
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }

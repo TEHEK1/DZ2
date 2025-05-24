@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.example.model.FileMetadata;
-import org.example.dto.FileUploadResponseDTO;
+import org.example.dto.FileUploadInternalDTO;
 import org.example.dto.FileResource;
 
 import java.io.IOException;
@@ -35,7 +35,7 @@ public class FileStorageService {
         }
     }
 
-    public FileUploadResponseDTO storeFile(MultipartFile file) throws IOException {
+    public FileUploadInternalDTO storeFile(MultipartFile file) throws IOException {
         String originalFilename = file.getOriginalFilename();
         String fileHash = calculateHash(file);
 
@@ -44,7 +44,9 @@ public class FileStorageService {
         for (FileMetadata existingFile : existingFiles) {
             Path existingFilePath = Paths.get(existingFile.getLocation()).normalize();
             if (Files.exists(existingFilePath) && areFilesContentEqual(file, existingFilePath)) {
-                return convertToUploadResponseDTO(existingFile);
+                FileUploadInternalDTO response = convertToUploadResponseDTO(existingFile);
+                response.setNewFile(false);
+                return response;
             }
         }
 
@@ -58,7 +60,9 @@ public class FileStorageService {
         fileMetadata.setLocation(targetLocation.toString());
         FileMetadata savedMetadata = fileMetadataRepository.save(fileMetadata);
 
-        return convertToUploadResponseDTO(savedMetadata);
+        FileUploadInternalDTO response = convertToUploadResponseDTO(savedMetadata);
+        response.setNewFile(true);
+        return response;
     }
 
     private String calculateHash(MultipartFile file) {
@@ -104,8 +108,8 @@ public class FileStorageService {
         }
     }
 
-    private FileUploadResponseDTO convertToUploadResponseDTO(FileMetadata metadata) {
-        FileUploadResponseDTO dto = new FileUploadResponseDTO();
+    private FileUploadInternalDTO convertToUploadResponseDTO(FileMetadata metadata) {
+        FileUploadInternalDTO dto = new FileUploadInternalDTO();
         dto.setId(metadata.getId());
         return dto;
     }
