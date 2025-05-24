@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    container_name: antiplagiat_db
+    environment:
+      POSTGRES_DB: antiplagiat
+      POSTGRES_USER: antiplagiat
+      POSTGRES_PASSWORD: antiplagiat
+    ports:
+      - "5432:5432"
