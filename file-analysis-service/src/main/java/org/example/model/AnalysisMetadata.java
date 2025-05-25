@@ -16,9 +16,9 @@ public class AnalysisMetadata {
     @Column(name = "file_id")
     private Long fileId;
     
-    private Long plagiarism_file_id;
+    private Long plagiarismFileId;
     
-    private Long paragraph_count;
-    private Long word_count;
-    private Long character_count;
+    private Long paragraphCount;
+    private Long wordCount;
+    private Long characterCount;
 }
