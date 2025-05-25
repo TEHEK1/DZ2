@@ -1,11 +1,13 @@
 package org.example.service;
 
+import jakarta.annotation.Nullable;
+import org.example.dto.FilePlagiarismResponseDTO;
 import org.example.repository.FileMetadataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.example.model.FileMetadata;
-import org.example.dto.FileUploadInternalDTO;
+import org.example.dto.FileUploadResponseDTO;
 import org.example.dto.FileResource;
 
 import java.io.IOException;
@@ -35,20 +37,9 @@ public class FileStorageService {
         }
     }
 
-    public FileUploadInternalDTO storeFile(MultipartFile file) throws IOException {
+    public FileUploadResponseDTO storeFile(MultipartFile file) throws IOException {
         String originalFilename = file.getOriginalFilename();
         String fileHash = calculateHash(file);
-
-        List<FileMetadata> existingFiles = fileMetadataRepository.findByHash(fileHash);
-
-        for (FileMetadata existingFile : existingFiles) {
-            Path existingFilePath = Paths.get(existingFile.getLocation()).normalize();
-            if (Files.exists(existingFilePath) && areFilesContentEqual(file, existingFilePath)) {
-                FileUploadInternalDTO response = convertToUploadResponseDTO(existingFile);
-                response.setNewFile(false);
-                return response;
-            }
-        }
 
         String filename = System.currentTimeMillis() + "_" + originalFilename;
         Path targetLocation = this.fileStorageLocation.resolve(filename);
@@ -60,9 +51,25 @@ public class FileStorageService {
         fileMetadata.setLocation(targetLocation.toString());
         FileMetadata savedMetadata = fileMetadataRepository.save(fileMetadata);
 
-        FileUploadInternalDTO response = convertToUploadResponseDTO(savedMetadata);
-        response.setNewFile(true);
-        return response;
+        return convertToUploadResponseDTO(savedMetadata);
+    }
+    public FilePlagiarismResponseDTO checkPlagiarism(Long fileId) {
+        Optional<FileMetadata> metadata = fileMetadataRepository.findById(fileId);
+        if (metadata.isPresent()) {
+            FileMetadata fileMetadata = metadata.get();
+            String fileHash = fileMetadata.getHash();
+            List<FileMetadata> existingFiles = fileMetadataRepository.findByHash(fileHash);
+            for (FileMetadata existingFile : existingFiles) {
+                Path filePath = this.fileStorageLocation.resolve(fileMetadata.getLocation());
+                Path existingFilePath = this.fileStorageLocation.resolve(existingFile.getLocation());
+                if (!fileId.equals(existingFile.getId()) && areFilesContentEqual(filePath, existingFilePath)) {
+                    return convertToPlagiarismResponseDTO(existingFile);
+                }
+            }
+            return convertToPlagiarismResponseDTO(null);
+        } else {
+            throw new RuntimeException("File metadata not found with id " + fileId);
+        }
     }
 
     private String calculateHash(MultipartFile file) {
@@ -79,14 +86,14 @@ public class FileStorageService {
         }
     }
 
-    private boolean areFilesContentEqual(MultipartFile uploadedFile, Path existingFilePath) {
-        try (InputStream uploadedStream = uploadedFile.getInputStream();
-             InputStream existingStream = Files.newInputStream(existingFilePath)) {
+    private boolean areFilesContentEqual(Path currentFilePath, Path otherFilePath) {
+        try (InputStream currentStream = Files.newInputStream(currentFilePath);
+             InputStream otherStream = Files.newInputStream(otherFilePath)) {
 
-            byte[] uploadedBytes = uploadedStream.readAllBytes();
-            byte[] existingBytes = existingStream.readAllBytes();
+            byte[] currentBytes = currentStream.readAllBytes();
+            byte[] otherBytes = otherStream.readAllBytes();
 
-            return MessageDigest.isEqual(uploadedBytes, existingBytes);
+            return MessageDigest.isEqual(currentBytes, otherBytes);
         } catch (IOException e) {
             throw new RuntimeException("Error comparing file contents", e);
         }
@@ -108,9 +115,14 @@ public class FileStorageService {
         }
     }
 
-    private FileUploadInternalDTO convertToUploadResponseDTO(FileMetadata metadata) {
-        FileUploadInternalDTO dto = new FileUploadInternalDTO();
+    private FileUploadResponseDTO convertToUploadResponseDTO(FileMetadata metadata) {
+        FileUploadResponseDTO dto = new FileUploadResponseDTO();
         dto.setId(metadata.getId());
+        return dto;
+    }
+    private FilePlagiarismResponseDTO convertToPlagiarismResponseDTO(@Nullable FileMetadata plagiarizedFile) {
+        FilePlagiarismResponseDTO dto = new FilePlagiarismResponseDTO();
+        dto.setPlagiarizedFileId(plagiarizedFile != null ? plagiarizedFile.getId() : null);
         return dto;
     }
 }

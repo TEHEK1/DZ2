@@ -1,5 +1,6 @@
 package org.example.controller;
 
+import org.example.dto.FilePlagiarismResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -8,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.example.dto.FileUploadResponseDTO;
-import org.example.dto.FileUploadInternalDTO;
 import org.example.service.FileStorageService;
 import org.example.dto.FileResource;
 
@@ -55,14 +55,8 @@ public class FileStorageController {
         }
 
         try {
-            FileUploadInternalDTO internalResponse = fileStorageService.storeFile(file);
-            FileUploadResponseDTO response = internalResponse;
-            
-            if (internalResponse.isNewFile()) {
-                return ResponseEntity.status(HttpStatus.CREATED).body(response);
-            } else {
-                return ResponseEntity.ok(response);
-            }
+            FileUploadResponseDTO response = fileStorageService.storeFile(file);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
@@ -96,6 +90,21 @@ public class FileStorageController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (IOException e) {
              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping(value = "/plagiarism/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<FilePlagiarismResponseDTO> getPlagiarism(
+            @Parameter(description = "ID of the file to retrieve", required = true)
+            @PathVariable Long id) {
+        try {
+            FilePlagiarismResponseDTO response = fileStorageService.checkPlagiarism(id);
+
+            return ResponseEntity.ok()
+                    .body(response);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 } 
