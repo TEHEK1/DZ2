@@ -152,4 +152,31 @@ public class ApiGatewayController {
     public ResponseEntity<?> analyzeFile(@PathVariable Long id) {
         return restTemplate.getForEntity(fileAnalysisServiceUrl + "/analysis/" + id, Object.class);
     }
+
+    @Operation(summary = "Get word cloud image", description = "Retrieves the word cloud image for a file")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Word cloud image retrieved successfully",
+                     content = @Content(mediaType = MediaType.IMAGE_PNG_VALUE)),
+        @ApiResponse(responseCode = "404", description = "Word cloud image not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error during image retrieval")
+    })
+    @GetMapping("/analysis/wordcloud/{filename}")
+    public ResponseEntity<?> getWordCloudImage(@PathVariable String filename) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Collections.singletonList(MediaType.IMAGE_PNG));
+        HttpEntity<?> requestEntity = new HttpEntity<>(headers);
+        
+        try {
+            return restTemplate.exchange(
+                fileAnalysisServiceUrl + "/analysis/wordcloud/" + filename,
+                HttpMethod.GET,
+                requestEntity,
+                byte[].class
+            );
+        } catch (Exception e) {
+            logger.error("Error while getting word cloud image: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error occurred while getting word cloud image: " + e.getMessage());
+        }
+    }
 } 

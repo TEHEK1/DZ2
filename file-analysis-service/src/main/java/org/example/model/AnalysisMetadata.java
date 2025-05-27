@@ -21,4 +21,7 @@ public class AnalysisMetadata {
     private Long paragraphCount;
     private Long wordCount;
     private Long characterCount;
+
+    @Column(name = "word_cloud_path")
+    private String wordCloudPath;
 }

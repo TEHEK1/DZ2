@@ -10,4 +10,5 @@ public class AnalysisResponseDTO {
     private Long wordCount;
     private Long characterCount;
     private Long plagiarismFileId;
+    private String wordCloudPath;
 } 
