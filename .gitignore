@@ -2,3 +2,5 @@
 /file-storing-service/uploads/
 /.idea/
 /file-analysis-service/target/
+/common-dto/target/
+/api-gateway/target/

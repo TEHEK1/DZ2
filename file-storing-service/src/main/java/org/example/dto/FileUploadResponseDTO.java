@@ -1,9 +1,0 @@
-package org.example.dto;
-
-import lombok.Data;
-
-@Data
-public class FileUploadResponseDTO {
-    private Long id;
-    private boolean newFile;
-}

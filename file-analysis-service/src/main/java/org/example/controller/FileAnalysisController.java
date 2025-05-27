@@ -28,7 +28,7 @@ public class FileAnalysisController {
         this.fileAnalysisService = fileAnalysisService;
     }
 
-    @Operation(summary = "Get file content by ID", description = "Retrieves the analysis of a file by its ID")
+    @Operation(summary = "Get file analysis by ID", description = "Retrieves the analysis of a file by its ID")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "File analysed successfully",
                      content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,

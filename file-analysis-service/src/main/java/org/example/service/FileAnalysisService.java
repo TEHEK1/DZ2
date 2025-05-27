@@ -83,7 +83,6 @@ public class FileAnalysisService {
 
     private AnalysisResponseDTO convertToResponseDTO(AnalysisMetadata metadata) {
         AnalysisResponseDTO response = new AnalysisResponseDTO();
-        response.setFileId(metadata.getFileId());
         response.setParagraphCount(metadata.getParagraphCount());
         response.setWordCount(metadata.getWordCount());
         response.setCharacterCount(metadata.getCharacterCount());
