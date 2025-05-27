@@ -2,6 +2,8 @@ package org.example.service;
 
 import jakarta.annotation.Nullable;
 import org.example.dto.FilePlagiarismResponseDTO;
+import org.example.exception.FileMetadataNotFoundException;
+import org.example.exception.FileNotFoundException;
 import org.example.repository.FileMetadataRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,7 +27,7 @@ import java.util.Optional;
 public class FileStorageService {
 
     private final FileMetadataRepository fileMetadataRepository;
-    private final Path fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
+    private final Path fileStorageLocation = Paths.get("/app/uploads").toAbsolutePath().normalize();
 
     @Autowired
     public FileStorageService(FileMetadataRepository fileMetadataRepository) {
@@ -53,6 +55,7 @@ public class FileStorageService {
 
         return convertToUploadResponseDTO(savedMetadata);
     }
+
     public FilePlagiarismResponseDTO checkPlagiarism(Long fileId) {
         Optional<FileMetadata> metadata = fileMetadataRepository.findById(fileId);
         if (metadata.isPresent()) {
@@ -68,7 +71,7 @@ public class FileStorageService {
             }
             return convertToPlagiarismResponseDTO(null);
         } else {
-            throw new RuntimeException("File metadata not found with id " + fileId);
+            throw new FileMetadataNotFoundException("File metadata not found with id " + fileId);
         }
     }
 
@@ -87,15 +90,13 @@ public class FileStorageService {
     }
 
     private boolean areFilesContentEqual(Path currentFilePath, Path otherFilePath) {
-        try (InputStream currentStream = Files.newInputStream(currentFilePath);
-             InputStream otherStream = Files.newInputStream(otherFilePath)) {
-
-            byte[] currentBytes = currentStream.readAllBytes();
-            byte[] otherBytes = otherStream.readAllBytes();
-
+        try {
+            byte[] currentBytes = Files.readAllBytes(currentFilePath);
+            byte[] otherBytes = Files.readAllBytes(otherFilePath);
             return MessageDigest.isEqual(currentBytes, otherBytes);
         } catch (IOException e) {
-            throw new RuntimeException("Error comparing file contents", e);
+            System.err.println("Error comparing file contents: " + e.getMessage());
+            return false;
         }
     }
 
@@ -108,10 +109,11 @@ public class FileStorageService {
                 InputStream inputStream = Files.newInputStream(filePath);
                 return new FileResource(inputStream, fileMetadata.getName());
             } else {
-                 throw new RuntimeException("File not found on disk for id " + fileId);
+                throw new FileNotFoundException("File not found on disk for id " + fileId, 
+                    new IOException("File does not exist at path: " + filePath));
             }
         } else {
-            throw new RuntimeException("File metadata not found with id " + fileId);
+            throw new FileMetadataNotFoundException("File metadata not found with id " + fileId);
         }
     }
 
@@ -120,9 +122,10 @@ public class FileStorageService {
         dto.setId(metadata.getId());
         return dto;
     }
+
     private FilePlagiarismResponseDTO convertToPlagiarismResponseDTO(@Nullable FileMetadata plagiarizedFile) {
         FilePlagiarismResponseDTO dto = new FilePlagiarismResponseDTO();
-        dto.setPlagiarizedFileId(plagiarizedFile != null ? plagiarizedFile.getId() : null);
+        dto.setPlagiarismFileId(plagiarizedFile != null ? plagiarizedFile.getId() : null);
         return dto;
     }
 }

@@ -1,6 +1,8 @@
 package org.example.controller;
 
 import org.example.dto.FilePlagiarismResponseDTO;
+import org.example.exception.FileMetadataNotFoundException;
+import org.example.exception.FileNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -86,25 +88,32 @@ public class FileStorageController {
                     .headers(headers)
                     .body(fileContent);
 
-        } catch (RuntimeException e) {
+        } catch (FileMetadataNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        } catch (IOException e) {
-             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        } catch (FileNotFoundException | IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
+    @Operation(summary = "Get file plagiarism by ID", description = "Retrieves the plagiarism of a file by its ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "File plagiarism retrieved successfully",
+                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                        schema = @Schema(implementation = FilePlagiarismResponseDTO.class))),
+        @ApiResponse(responseCode = "404", description = "File not found"),
+        @ApiResponse(responseCode = "500", description = "Internal server error during file plagiarism retrieval")
+    })
     @GetMapping(value = "/plagiarism/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<FilePlagiarismResponseDTO> getPlagiarism(
             @Parameter(description = "ID of the file to retrieve", required = true)
             @PathVariable Long id) {
         try {
             FilePlagiarismResponseDTO response = fileStorageService.checkPlagiarism(id);
-
-            return ResponseEntity.ok()
-                    .body(response);
-
-        } catch (RuntimeException e) {
+            return ResponseEntity.ok().body(response);
+        } catch (FileMetadataNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (FileNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 } 

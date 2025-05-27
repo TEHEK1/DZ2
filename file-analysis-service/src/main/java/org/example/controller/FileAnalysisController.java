@@ -8,8 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import org.example.dto.AnalysisResponseDTO;
 import org.example.service.FileAnalysisService;
 
-import java.io.IOException;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -43,15 +41,11 @@ public class FileAnalysisController {
             @Parameter(description = "ID of the file to retrieve", required = true)
             @PathVariable Long id) {
         try {
-            AnalysisResponseDTO response = fileAnalysisService.analyseFileByID(id);
-
-            return ResponseEntity.ok()
-                    .body(response);
-
+            AnalysisResponseDTO response = fileAnalysisService.analyzeFile(id);
+            return ResponseEntity.ok().body(response);
         } catch (RuntimeException e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        } catch (IOException e) {
-             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 } 
