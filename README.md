@@ -133,3 +133,11 @@ docker-compose logs -f api-gateway
 
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - API документация: `http://localhost:8080/v3/api-docs`
+
+# Запуск тестов
+
+Для запуска всех тестов в проекте используйте команду:
+
+```
+mvn test
+```

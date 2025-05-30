@@ -27,11 +27,16 @@ import java.util.Optional;
 public class FileStorageService {
 
     private final FileMetadataRepository fileMetadataRepository;
-    private final Path fileStorageLocation = Paths.get("/app/uploads").toAbsolutePath().normalize();
+    private final Path fileStorageLocation;
 
     @Autowired
     public FileStorageService(FileMetadataRepository fileMetadataRepository) {
+        this(fileMetadataRepository, Paths.get("/app/uploads").toAbsolutePath().normalize());
+    }
+
+    public FileStorageService(FileMetadataRepository fileMetadataRepository, Path fileStorageLocation) {
         this.fileMetadataRepository = fileMetadataRepository;
+        this.fileStorageLocation = fileStorageLocation;
         try {
             Files.createDirectories(this.fileStorageLocation);
         } catch (Exception ex) {

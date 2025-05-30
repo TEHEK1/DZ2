@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,8 +71,7 @@ public class FileAnalysisService {
         try {
             String fileUrl = fileStorageServiceUrl + "/files/" + fileId;
             logger.info("Fetching file content from: {}", fileUrl);
-            URL url = new URL(fileUrl);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(getFileInputStreamFromUrl(fileUrl)));
             
             AnalysisMetadata metadata = new AnalysisMetadata();
             metadata.setFileId(fileId);
@@ -172,5 +172,12 @@ public class FileAnalysisService {
         response.setPlagiarismFileId(metadata.getPlagiarismFileId());
         response.setWordCloudPath(metadata.getWordCloudPath());
         return response;
+    }
+
+    /**
+     * Для тестирования: этот метод можно замокать, чтобы не было реального обращения к сети.
+     */
+    protected InputStream getFileInputStreamFromUrl(String url) throws IOException {
+        return new URL(url).openStream();
     }
 }
